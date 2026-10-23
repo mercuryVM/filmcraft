@@ -123,10 +123,6 @@ pub trait VideoSamples: Sync {
     fn make_decoder(&self) -> crate::Result<Box<dyn VideoDecoder>>;
 }
 
-/// The sync sample to start decoding at for sample `i`: its sync sample, or an earlier one when
-/// `i` is a leading picture of an open GOP (stored after its random-access picture, shown before
-/// it, like the RASL pictures after every HEVC CRA of iPhone video). Those are predicted from the
-/// GOP before, so a decoder starting at their random-access picture leaves them out.
 /// A container's sync sample for `i` when leading pictures need the GOP before: `sync` is the
 /// index's own sync sample, `leads(i, key)` says `i` is shown before `key`. One step per GOP, so a
 /// loop: a crafted index can chain tens of thousands of GOPs (#2803). A `sync` past `i` stops the
@@ -141,6 +137,10 @@ pub(crate) fn open_gop_sync(mut i: usize, sync: impl Fn(usize) -> usize, leads: 
     }
 }
 
+/// The sync sample to start decoding at for sample `i`: its sync sample, or an earlier one when
+/// `i` is a leading picture of an open GOP (stored after its random-access picture, shown before
+/// it, like the RASL pictures after every HEVC CRA of iPhone video). Those are predicted from the
+/// GOP before, so a decoder starting at their random-access picture leaves them out.
 fn decode_start(s: &dyn VideoSamples, i: usize) -> usize {
     let mut key = s.sync_before(i);
     while key > 0 && s.pts(i) < s.pts(key) {
